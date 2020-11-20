@@ -26,7 +26,7 @@ while True :
     url = url + code + "&page=" + str(t)
     t+=1
     if t == 23 : break
-    print(url)
+    #print(url)
     html = requests.get(url)
     soup = BeautifulSoup(html.text, 'html.parser')
 
@@ -41,6 +41,11 @@ while True :
 
     list = [ [0]*3 for i in range(32)]
     for i in range_list :
+        index = 0
+        if int(i/5) == 1 : index = i-5
+        elif int((i-3)/5) == 2 : index = i-8
+        elif int((i-1)/5) == 4 : index = i-11
+        else : index = i-14
 
         selector = '#content > div.section.inner_sub > table.type2 > tr:nth-child('
         selector = selector + str(i) +  ') > td.tc > span'
@@ -51,7 +56,7 @@ while True :
         if len(title) == 0 : break
 
         cur_date = title[0].text.replace(".","")
-        list[i-5][0] = cur_date
+        list[index][0] = cur_date
 
         selector = '#content > div.section.inner_sub > table.type2 > tr:nth-child('
         selector = selector + str(i) + ') > td:nth-child(6) > span'
@@ -59,7 +64,7 @@ while True :
             selector
         )
 
-        list[i-5][1] = title[0].text
+        list[index][1] = title[0].text
 
         selector = '#content > div.section.inner_sub > table.type2 > tr:nth-child('
         selector = selector + str(i) + ') > td:nth-child(7) > span'
@@ -67,14 +72,14 @@ while True :
             selector
         )
 
-        list[i-5][2] = title[0].text
+        list[index][2] = title[0].text
 
-        print(list[i-5][0] + " " + list[i-5][1] + " " + list[i-5][2])
+        print(list[index][0] + " " + list[index][1] + " " + list[index][2])
         total_list += list
 
 
 
-total_list = total_list[0:4]
+total_list = total_list[4:8]
 pf = DataFrame(total_list, columns=['날짜','기관','외국인'])
 print(pf)
 

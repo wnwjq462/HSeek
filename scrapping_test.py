@@ -6,26 +6,29 @@ from bs4 import BeautifulSoup
 from functools import reduce
 import numpy as np
 import sqlite3
+import time
 
 total_list = []
 range_list = [5,6,7,8,9,13,14,15,16,17,21,22,23,24,25,29,30,31,32,33]
 
 past_date = "0"
 code = "000040"
-t = 16
+t = 1
 
 con = sqlite3.connect("c:/Users/H/Desktop/HTrader/HSeek/kospi_daydata.db")
+con_2 = sqlite3.connect("c:/Users/H/Desktop/HTrader/HSeek/kospi_daydata_2.db")
+table_name = "_" + code
 sql = "SELECT * FROM "
 sql = sql + "_" + code
 df = pd.read_sql(sql, con, index_col=None)
-
+start_time = time.time()
 while True :
 
     print(t)
     url = "https://finance.naver.com/item/frgn.nhn?code="
     url = url + code + "&page=" + str(t)
     t+=1
-    if t == 23 : break
+    #if t == 23 : break
     #print(url)
     html = requests.get(url)
     soup = BeautifulSoup(html.text, 'html.parser')
@@ -38,8 +41,8 @@ while True :
     if past_date == cur_date : break
 
     past_date = title[0].text
+    list = [ [0]*3 for i in range(20)]
 
-    list = [ [0]*3 for i in range(32)]
     for i in range_list :
         index = 0
         if int(i/5) == 1 : index = i-5
@@ -74,14 +77,26 @@ while True :
 
         list[index][2] = title[0].text
 
-        print(list[index][0] + " " + list[index][1] + " " + list[index][2])
-        total_list += list
+
+        #print(list[index][0] + " " + list[index][1] + " " + list[index][2])
+
+
+        #print(pf)
+
+    total_list += list
 
 
 
-total_list = total_list[4:8]
+
+
+#total_list = total_list[0:8]
 pf = DataFrame(total_list, columns=['날짜','기관','외국인'])
 print(pf)
 
 merge_df = pd.merge(df,pf,how = 'inner', on = '날짜')
 print(merge_df)
+end_time = time.time()
+print("total time : ",(end_time - start_time))
+merge_df.to_sql(table_name,con_2,if_exists="replace", index = False)
+con_2.commit()
+con_2.close()

@@ -27,13 +27,16 @@ MARKET_KOSPI = 0
 MARKET_KOSDAQ = 10
 TR_REQ_TIME_INTERVAL = 0.5
 
+#미리 제작해놓은 ui 연결
 BT_form_class = uic.loadUiType("backtesting.ui")[0]
 
+#벡테스팅 시 벡테스팅 창에서 매도,매수를 각 종목을 클릭했을 때 표시되는 봉 차트를 구현하는 클래스
 class Candle_Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setupUI()
 
+#기본 창 setup
     def setupUI(self):
         self.setGeometry(300,300,1500,800)
         self.setWindowTitle("Candle Chart")
@@ -49,11 +52,12 @@ class Candle_Window(QWidget):
 
         self.setLayout(layout)
 
-
+#봉 차트 표시 함수
     def show_candel(self,df,buy_list_code,sell_list_code,end):
 
         print("Entrance")
 
+        #이동평균선 구하고 저장
         ma5 = df['종가'].rolling(window=5).mean()
         ma20 = df['종가'].rolling(window=20).mean()
         ma60 = df['종가'].rolling(window=60).mean()
@@ -68,19 +72,20 @@ class Candle_Window(QWidget):
         buy_value = buy_list_code[0]
         #buy_index = buy_list_code[4]
         buy_index = df.loc[df['날짜'] == buy_date].index.values[0]
-        buy_marker = df.iloc[buy_index]['고가']
+        buy_marker = df.iloc[buy_index]['고가']       #매수 지점 표시
 
-        start_index = buy_index-5
-        end_index = df.loc[df['날짜'] == (end)]
+        start_index = buy_index-5   #매수 지점 5일 전 부터 차트에 표시한다.
+        end_index = df.loc[df['날짜'] == (end)]   #매도가 안된 경우에는 끝 지점이 벡 테스팅 마지막 날짜 기준으로 표시된다.
         end_index = end_index.index.values[0]
 
+        #매도가 된 경우
         if buy_list_code[3] is True :
             sell_date = sell_list_code[2]
             sell_value = sell_list_code[0]
             sell_index = df.loc[df['날짜'] == str(sell_date), ['종가']]
             sell_index = sell_index.index.values[0]
-            end_index = sell_index + 5
-            sell_marker = df.iloc[sell_index]['고가']
+            end_index = sell_index + 5      #매도 후 5일까지 차트에 표시
+            sell_marker = df.iloc[sell_index]['고가']     #매도 지점 표시
             sold = True
 
         row = []
@@ -99,6 +104,7 @@ class Candle_Window(QWidget):
         row.append(str(p_rate))
         row.append(str(v_rate))
 
+        #매수, 매도에 대한 정보도 표로 정리하여 표시
         col_label = ["구분", "전날종가", "전날거래량", "당일종가", "당일거래량", "증감율", "거래대비"]
         self.tableWidget_4.setRowCount(1)
         self.tableWidget_4.setColumnCount(7)
@@ -133,6 +139,7 @@ class Candle_Window(QWidget):
 
         new_df = df.loc[start_index : end_index]
 
+        #날짜가 많으므로, 월요일만 표시
         day_list = new_df['날짜']
         dt_day_list = [datetime.datetime.strptime(v, "%Y%m%d").date() for v in day_list]
         new_day_list = []
@@ -159,7 +166,7 @@ class Candle_Window(QWidget):
         spec = gridspec.GridSpec(ncols=1,nrows=2, height_ratios=[4,1])
         ax = self.fig.add_subplot(spec[0])
 
-
+        #이동평균선 표시
         MA5_line, = ax.plot(day_list, new_df['MA5'], 'g', label='MA5')
         MA20_line, = ax.plot(day_list, new_df['MA20'], 'c', label='MA20')
         MA60_line, = ax.plot(day_list, new_df['MA60'], 'm', label='MA60')
@@ -178,7 +185,7 @@ class Candle_Window(QWidget):
         ax.xaxis.set_major_formatter(ticker.FixedFormatter(name_list))
         b_ax.xaxis.set_major_locator(ticker.FixedLocator(new_day_list))
         b_ax.xaxis.set_major_formatter(ticker.FixedFormatter(name_list))
-        b_ax.bar(day_list, new_df['거래량'], label='Volume')
+        b_ax.bar(day_list, new_df['거래량'], label='Volume')       #거래량 그래프도 표시
         mpl_finance.candlestick2_ohlc(ax, new_df['시가'], new_df['고가'], new_df['저가'], new_df['종가'], width=0.5,
                                       colorup='r', colordown='b')
 
@@ -187,6 +194,7 @@ class Candle_Window(QWidget):
         # plt.show()
         self.canvas.draw()
 
+#벡 테스팅 결과를 표시해주는 창을 구현하는 클래스
 class BT_Window(QMainWindow, BT_form_class) :
     def __init__(self):
         super().__init__()
@@ -204,7 +212,7 @@ class BT_Window(QMainWindow, BT_form_class) :
         self.candle_window = Candle_Window()
 
 
-
+#벡 테스팅 창에서 종목 코드를 누르면 연결되는 이벤트 핸들러 -> 봉 차트를 표시한다.
     def candle_btn(self):
         sender = self.sender()
         code = sender.text()
@@ -229,7 +237,7 @@ class BT_Window(QMainWindow, BT_form_class) :
         print("check 4")
 
 
-
+#벡 테스팅 결과를 표의 형식으로 보여줌
     def get_backtesting_result(self,buy_list,sell_list,start_value, money,start,end,buy_df):
 
         self.buy_df = buy_df
@@ -333,21 +341,24 @@ class BT_Window(QMainWindow, BT_form_class) :
 
 
 
-
+#메인 클래스
 class HSeek:
     def __init__(self):
-        #self.kiwoom = Kiwoom()
+        #self.kiwoom = Kiwoom()     #키움 API와 연결하는 부분 // 현재는 벡테스팅 기능에 집중하여 잠시 주석 처리
         #self.kiwoom.comm_connect()
         #self.get_code_list()
         self.today = datetime.datetime.today().strftime("%Y%m%d")
+        #데이터 베이스 연결
         self.con_day_kospi = sqlite3.connect("c:/Users/H/Desktop/HTrader/HSeek/kospi_daydata.db")
         self.con_day_kosdaq = sqlite3.connect("c:/Users/H/Desktop/HTrader/HSeek/kosdaq_daydata.db")
         self.con_min_kopsi = sqlite3.connect("c:/Users/H/Desktop/HTrader/HSeek/kospi_mindata.db")
 
+    #시장별로 종목 코드 리스트 받기
     def get_code_list(self):
         self.kospi_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSPI)
         self.kosdaq_codes = self.kiwoom.get_code_list_by_market(MARKET_KOSDAQ)
 
+    #종목 일봉 정보를 Dataframe에 저장
     def get_ohlcv(self,code,start):
         self.kiwoom.ohlcv = {'date': [], 'open':[], 'high' :[], 'low':[], 'close':[], 'volume':[]}
 
@@ -360,6 +371,7 @@ class HSeek:
 
         return df
 
+    #거래량 급증 종목 체크
     def check_speedy_rising_volume(self,code):
         df = self.get_ohlcv(code, self.today)
         volumes = df['volume']
@@ -382,11 +394,13 @@ class HSeek:
         if today_vol > avg_vol20*10:
             return True
 
+    #HSeek 에서 찾은 종목을 buy_list.txt에 작성
     def update_buy_list(self,buy_list,reason):
         f = open("C:/Users/H/Desktop/HTrader/buy_list.txt","at",encoding='UTF8')
         for code in buy_list:
             f.writelines("매수;"+code+';'+self.kiwoom.get_master_code_name(code)+";시장가;10;0;매수전;"+reason+';\n')
         f.close()
+
 
     def seek_rising_volume(self,code_list):
         buy_list = []
@@ -399,6 +413,7 @@ class HSeek:
         self.update_buy_list(buy_list,"거래량급증")
         print("complete")
 
+    #종목별 분봉 데이터 저장
     def min_update(self):
 
         print("min_update start")
@@ -487,7 +502,7 @@ class HSeek:
         self.con_min_kopsi.commit()
         self.con_min_kopsi.close()
 
-
+    #종목별 일봉 데이터 저장 // 상장일을 조사 후 web.DataReader 로 불러옴
     def day_update(self):
 
         print("Kospi_day_update start")
@@ -712,6 +727,7 @@ class HSeek:
         #self.min_update()
         self.day_update()
 
+    #어떠한 조건을 만족시킬 때 매수하는 함수
     def buy_func_1(self, code_list, merge_list, index,money, buy_list):
 
 
@@ -743,6 +759,7 @@ class HSeek:
 
         return 0
 
+    #어떤 조건을 만족시킬 때 매도하는 함수
     def sell_func_1(self, buy_list, merge_list, index, sell_list):
 
         for code in buy_list :
@@ -768,7 +785,7 @@ class HSeek:
 
         return 0
 
-
+    #buy_function, sell_function 기반으로 Back_testing 진행
     def back_testing(self, start, end, money, buy_func, sell_func, window):
         stock_value = 0
         total_value = money + stock_value
@@ -789,7 +806,6 @@ class HSeek:
         code_list = pd.read_sql(sql,con)
         code_list = code_list.values.tolist()
         code_list = [x.replace('_', '') for x in np.reshape(code_list, -1)]
-        #random.shuffle(code_list)
 
         random.shuffle(code_list)
         code_list = code_list[0:30]
@@ -797,6 +813,7 @@ class HSeek:
             #code_list_list.append(code_list[90*i : 90*(1+i)])
 
         start_time = time.time()
+        #DB로부터 일봉 정보를 불러오고, 모든 종목에 대해 비교하기 위해 Merge 시켜줌
         for code in code_list:
             sql = "SELECT * FROM "
             sql = sql + "_" + code
@@ -832,7 +849,7 @@ class HSeek:
 
         check = False #시작날짜 찾았는지의 여부
 
-
+        #날짜를 하루씩 훑어가며 buy,sell 조건에 맞는 종목을 찾아감
         for i in range(len(merge_list)) :
 
 

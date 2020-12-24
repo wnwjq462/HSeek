@@ -100,5 +100,12 @@ show_candel(self,df,buy_list_code,sell_list_code,end) : 봉 차트 표시 함수
 또한 매수, 매도 지점을 봉 차트에서 화살표로 표시해주었다.
 
 
+scrapping_test.py / scrap_multi.py
+
+이 파일들은 주식 종목의 외인,기관 매수 매도 정보를 데이터 베이스에 저장하는 소스코드이다.
+네이버 증권 페이지에서 스크래핑을 해오는데, 시간이 많이 소요되어 이것을 멀티프로세싱을 이용하여
+구하는 것이 scrap_mutil.py 소스코드이다. queue joining 에서 문제가 발생하여 수정 중이다.
+
+
 
 
